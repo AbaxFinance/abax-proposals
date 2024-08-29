@@ -1,3 +1,9 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "rust-analyzer.linkedProjects": [
+    "./proposals/01_initial_lending_pool_configuration/initial_pool_config_proposal/Cargo.toml",
+    "./proposals/02_register_assets/register_assets_proposal/Cargo.toml"
+  ],
+  "rust-analyzer.showUnlinkedFileNotification": true,
+  "rust-analyzer.cargo.features": "all"
 }
