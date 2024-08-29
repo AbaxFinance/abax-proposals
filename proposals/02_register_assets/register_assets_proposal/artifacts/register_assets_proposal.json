@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x602264ec8f054f2bfc88528809c6c14fbc444a46c99f833dc9f29987bba1dff3",
+    "hash": "0xbdb6d036889c2be1d597be7d48b4a91774c28bcb34e8981455c9c61dbdc9a516",
     "language": "ink! 5.0.0",
     "compiler": "rustc 1.77.2",
     "build_info": {
@@ -86,15 +86,6 @@
           },
           {
             "label": "wazero_address",
-            "type": {
-              "displayName": [
-                "AccountId"
-              ],
-              "type": 1
-            }
-          },
-          {
-            "label": "price_feed_provider",
             "type": {
               "displayName": [
                 "AccountId"
@@ -1630,15 +1621,6 @@
                 }
               },
               "name": "wazero_address"
-            },
-            {
-              "layout": {
-                "leaf": {
-                  "key": "0x00000000",
-                  "ty": 1
-                }
-              },
-              "name": "price_feed_provider"
             }
           ],
           "name": "Proposal"
@@ -1738,11 +1720,6 @@
                 "name": "wazero_address",
                 "type": 1,
                 "typeName": "<AccountId as::ink::storage::traits::AutoStorableHint<::ink::\nstorage::traits::ManualKey<1716336172u32, ()>,>>::Type"
-              },
-              {
-                "name": "price_feed_provider",
-                "type": 1,
-                "typeName": "<AccountId as::ink::storage::traits::AutoStorableHint<::ink::\nstorage::traits::ManualKey<2856903516u32, ()>,>>::Type"
               }
             ]
           }
@@ -1950,11 +1927,6 @@
               },
               {
                 "name": "wazero_address",
-                "type": 1,
-                "typeName": "AccountId"
-              },
-              {
-                "name": "price_feed_provider",
                 "type": 1,
                 "typeName": "AccountId"
               }

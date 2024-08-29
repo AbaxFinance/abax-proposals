@@ -77,7 +77,6 @@ mod register_assets_proposal {
         pub weth_address: AccountId,
         pub wbtc_address: AccountId,
         pub wazero_address: AccountId,
-        pub price_feed_provider: AccountId,
     }
 
     #[ink(storage)]
@@ -91,7 +90,6 @@ mod register_assets_proposal {
         weth_address: AccountId,
         wbtc_address: AccountId,
         wazero_address: AccountId,
-        price_feed_provider: AccountId,
     }
 
     impl Proposal {
@@ -105,7 +103,6 @@ mod register_assets_proposal {
             weth_address: AccountId,
             wbtc_address: AccountId,
             wazero_address: AccountId,
-            price_feed_provider: AccountId,
         ) -> Self {
             Self {
                 lending_pool: LendingPoolManageRef::from(lending_pool),
@@ -117,7 +114,6 @@ mod register_assets_proposal {
                 weth_address,
                 wbtc_address,
                 wazero_address,
-                price_feed_provider,
             }
         }
 
@@ -137,7 +133,6 @@ mod register_assets_proposal {
                 weth_address: self.weth_address,
                 wbtc_address: self.wbtc_address,
                 wazero_address: self.wazero_address,
-                price_feed_provider: self.price_feed_provider,
             }
         }
 
@@ -193,18 +188,6 @@ mod register_assets_proposal {
                 7 => {
                     self._execute_step7()?;
                 }
-                8 => {
-                    self._execute_step8()?;
-                }
-                9 => {
-                    self._execute_step9()?;
-                }
-                10 => {
-                    self._execute_step10()?;
-                }
-                11 => {
-                    self._execute_step11()?;
-                }
                 _ => {
                     return Err(ProposalError::ProposalAlreadyExecuted);
                 }
@@ -233,21 +216,6 @@ mod register_assets_proposal {
         fn _execute_step1(&self) -> Result<(), ProposalError> {
             let mut lending_pool_access_control =
                 AccessControlRef::from(self.lending_pool.to_account_id());
-
-            lending_pool_access_control
-                .call_mut()
-                .grant_role(
-                    ink::selector_id!("PARAMETERS_ADMIN"),
-                    Some(self.env().account_id()),
-                )
-                .call_v1()
-                .invoke()?;
-
-            Ok(())
-        }
-        fn _execute_step2(&self) -> Result<(), ProposalError> {
-            let mut lending_pool_access_control =
-                AccessControlRef::from(self.lending_pool.to_account_id());
             lending_pool_access_control
                 .call_mut()
                 .renounce_role(0, Some(Self::env().account_id()))
@@ -257,55 +225,37 @@ mod register_assets_proposal {
             Ok(())
         }
 
-        fn _execute_step3(&mut self) -> Result<(), ProposalError> {
-            self.lending_pool
-                .call_mut()
-                .add_market_rule(vec![])
-                .call_v1()
-                .invoke()?;
-
-            Ok(())
-        }
-        fn _execute_step4(&mut self) -> Result<(), ProposalError> {
-            self.lending_pool
-                .call_mut()
-                .set_price_feed_provider(self.price_feed_provider)
-                .call_v1()
-                .invoke()?;
-            Ok(())
-        }
-
-        fn _execute_step5(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step2(&mut self) -> Result<(), ProposalError> {
             //register usdt
             self._register_token(self.get_usdt_token_data())?;
             Ok(())
         }
 
-        fn _execute_step6(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step3(&mut self) -> Result<(), ProposalError> {
             //register usdc
             self._register_token(self.get_usdc_token_data())?;
             Ok(())
         }
 
-        fn _execute_step7(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step4(&mut self) -> Result<(), ProposalError> {
             //register weth
             self._register_token(self.get_weth_token_data())?;
             Ok(())
         }
 
-        fn _execute_step8(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step5(&mut self) -> Result<(), ProposalError> {
             //register wbtc
             self._register_token(self.get_wbtc_token_data())?;
             Ok(())
         }
 
-        fn _execute_step9(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step6(&mut self) -> Result<(), ProposalError> {
             //register wazero
             self._register_token(self.get_wazero_token_data())?;
             Ok(())
         }
 
-        fn _execute_step10(&mut self) -> Result<(), ProposalError> {
+        fn _execute_step7(&mut self) -> Result<(), ProposalError> {
             let mut lending_pool_access_control =
                 AccessControlRef::from(self.lending_pool.to_account_id());
 
@@ -313,22 +263,6 @@ mod register_assets_proposal {
                 .call_mut()
                 .renounce_role(
                     ink::selector_id!("ASSET_LISTING_ADMIN"),
-                    Some(self.env().account_id()),
-                )
-                .call_v1()
-                .invoke()?;
-
-            Ok(())
-        }
-
-        fn _execute_step11(&mut self) -> Result<(), ProposalError> {
-            let mut lending_pool_access_control =
-                AccessControlRef::from(self.lending_pool.to_account_id());
-
-            lending_pool_access_control
-                .call_mut()
-                .renounce_role(
-                    ink::selector_id!("PARAMETERS_ADMIN"),
                     Some(self.env().account_id()),
                 )
                 .call_v1()
@@ -346,14 +280,20 @@ mod register_assets_proposal {
                     deposit_fee_e6: 0,
                     debt_fee_e6: 0,
                 },
-                interest_rate_model_params: DEFAULT_INTEREST_RATE_MODEL,
+                interest_rate_model_params: InterestRateModelParams {
+                    target_ur_e6: 920_000, //92%
+                    min_rate_at_target_e18: ONE_PERCENT_APR_E18,
+                    max_rate_at_target_e18: 16 * ONE_PERCENT_APR_E18,
+                    rate_at_max_ur_e18: 80 * ONE_PERCENT_APR_E18,
+                    minimal_time_between_adjustments: 30 * ONE_MIN,
+                },
                 default_rule: AssetRules {
-                    collateral_coefficient_e6: Some(950_000),
-                    borrow_coefficient_e6: Some(1_050_000),
-                    penalty_e6: Some(25_000),
+                    collateral_coefficient_e6: Some(960_000),
+                    borrow_coefficient_e6: Some(1_040_000),
+                    penalty_e6: Some(20_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: None,
+                    maximal_total_deposit: Some(200_000 * 1_000_000), // 200_000 USDT
                     maximal_total_debt: None,
                     minimal_collateral: 2_000,
                     minimal_debt: 1_000,
@@ -369,11 +309,17 @@ mod register_assets_proposal {
                     deposit_fee_e6: 0,
                     debt_fee_e6: 0,
                 },
-                interest_rate_model_params: DEFAULT_INTEREST_RATE_MODEL,
+                interest_rate_model_params: InterestRateModelParams {
+                    target_ur_e6: 920_000, //92%
+                    min_rate_at_target_e18: ONE_PERCENT_APR_E18,
+                    max_rate_at_target_e18: 16 * ONE_PERCENT_APR_E18,
+                    rate_at_max_ur_e18: 80 * ONE_PERCENT_APR_E18,
+                    minimal_time_between_adjustments: 30 * ONE_MIN,
+                },
                 default_rule: AssetRules {
-                    collateral_coefficient_e6: Some(950_000),
-                    borrow_coefficient_e6: Some(1_050_000),
-                    penalty_e6: Some(25_000),
+                    collateral_coefficient_e6: Some(960_000),
+                    borrow_coefficient_e6: Some(1_040_000),
+                    penalty_e6: Some(20_000),
                 },
                 restrictions: ReserveRestrictions {
                     maximal_total_deposit: None,
@@ -392,10 +338,16 @@ mod register_assets_proposal {
                     deposit_fee_e6: 0,
                     debt_fee_e6: 0,
                 },
-                interest_rate_model_params: DEFAULT_INTEREST_RATE_MODEL,
+                interest_rate_model_params: InterestRateModelParams {
+                    target_ur_e6: 850_000, //85%
+                    min_rate_at_target_e18: ONE_PERCENT_APR_E18 / 2,
+                    max_rate_at_target_e18: 10 * ONE_PERCENT_APR_E18,
+                    rate_at_max_ur_e18: 90 * ONE_PERCENT_APR_E18,
+                    minimal_time_between_adjustments: 30 * ONE_MIN,
+                },
                 default_rule: AssetRules {
-                    collateral_coefficient_e6: Some(750_000),
-                    borrow_coefficient_e6: Some(1_250_000),
+                    collateral_coefficient_e6: Some(800_000),
+                    borrow_coefficient_e6: Some(1_190_000),
                     penalty_e6: Some(125_000),
                 },
                 restrictions: ReserveRestrictions {
@@ -415,11 +367,17 @@ mod register_assets_proposal {
                     deposit_fee_e6: 0,
                     debt_fee_e6: 0,
                 },
-                interest_rate_model_params: DEFAULT_INTEREST_RATE_MODEL,
+                interest_rate_model_params: InterestRateModelParams {
+                    target_ur_e6: 850_000, //85%
+                    min_rate_at_target_e18: ONE_PERCENT_APR_E18 / 2,
+                    max_rate_at_target_e18: 10 * ONE_PERCENT_APR_E18,
+                    rate_at_max_ur_e18: 90 * ONE_PERCENT_APR_E18,
+                    minimal_time_between_adjustments: 30 * ONE_MIN,
+                },
                 default_rule: AssetRules {
-                    collateral_coefficient_e6: Some(750_000),
-                    borrow_coefficient_e6: Some(1_250_000),
-                    penalty_e6: Some(125_000),
+                    collateral_coefficient_e6: Some(800_000),
+                    borrow_coefficient_e6: Some(1_150_000),
+                    penalty_e6: Some(100_000),
                 },
                 restrictions: ReserveRestrictions {
                     maximal_total_deposit: None,
@@ -438,11 +396,17 @@ mod register_assets_proposal {
                     deposit_fee_e6: 0,
                     debt_fee_e6: 0,
                 },
-                interest_rate_model_params: DEFAULT_INTEREST_RATE_MODEL,
+                interest_rate_model_params: InterestRateModelParams {
+                    target_ur_e6: 450_000, //45%
+                    min_rate_at_target_e18: ONE_PERCENT_APR_E18,
+                    max_rate_at_target_e18: 10 * ONE_PERCENT_APR_E18,
+                    rate_at_max_ur_e18: 230 * ONE_PERCENT_APR_E18,
+                    minimal_time_between_adjustments: 30 * ONE_MIN,
+                },
                 default_rule: AssetRules {
-                    collateral_coefficient_e6: Some(630_000),
-                    borrow_coefficient_e6: Some(1_420_000),
-                    penalty_e6: Some(200_000),
+                    collateral_coefficient_e6: Some(330_000),
+                    borrow_coefficient_e6: Some(3_000_000),
+                    penalty_e6: Some(500_000),
                 },
                 restrictions: ReserveRestrictions {
                     maximal_total_deposit: None,
