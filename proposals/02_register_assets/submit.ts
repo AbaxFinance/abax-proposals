@@ -4,14 +4,14 @@ import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import chalk from 'chalk';
 import { LENDING_POOL_ADDRESS } from 'proposals/01_initial_lending_pool_configuration/consts';
-import InitialPoolConfigProposalContract from 'proposals/01_initial_lending_pool_configuration/initial_pool_config_proposal/typechain/contracts/initial_pool_config_proposal';
+import RegisterAssetsProposalContract from 'proposals/02_register_assets/register_assets_proposal/typechain/contracts/register_assets_proposal';
 import { paramsToInputNumbers } from 'proposals/utils/paramsHexConversionUtils';
 import { getConfigFromArgsAndEnv, handleProposeResult, tryPropose } from 'proposals/utils/proposeUtils';
 
-const INITIAL_POOL_CONFIG_PROPOSAL_ADDRESS = '5FSUbdCB2qpDCkpVDbvR8Kv6yV5TML7Y4Ax5eEVr3emfPHHU';
+const INITIAL_POOL_CONFIG_PROPOSAL_ADDRESS = '<><><><><><';
 
 async function createTransactions(signer: KeyringPair, api: ApiPromise): Promise<AbaxGovernorArguments.Transaction[]> {
-  const initialConfigProposalContract = new InitialPoolConfigProposalContract(INITIAL_POOL_CONFIG_PROPOSAL_ADDRESS, signer, api);
+  const initialConfigProposalContract = new RegisterAssetsProposalContract(INITIAL_POOL_CONFIG_PROPOSAL_ADDRESS, signer, api);
 
   console.log(`Initial config proposal address: ${initialConfigProposalContract.address}`);
 
