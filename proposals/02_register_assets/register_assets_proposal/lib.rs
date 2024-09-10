@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-
 use abax_contracts::lending_pool::LendingPoolError;
 
 #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -26,14 +25,23 @@ impl From<pendzl::contracts::access_control::AccessControlError> for ProposalErr
 mod register_assets_proposal {
     use crate::ProposalError;
     use abax_contracts::lending_pool::SetReserveFeesArgs;
-    use abax_library::structs::{AssetRules, InterestRateModelParams, ReserveRestrictions};
+    use abax_library::{
+        math::{E12_U128, E18_U128, E8_U128},
+        structs::{AssetRules, InterestRateModelParams, ReserveRestrictions},
+    };
 
     use abax_contracts::lending_pool::{LendingPoolManage, LendingPoolManageRef};
-    use ink::{codegen::TraitCallBuilder, prelude::vec, ToAccountId};
+    use ink::{codegen::TraitCallBuilder, ToAccountId};
     use pendzl::contracts::{
         access_control::{AccessControl, AccessControlRef},
         psp22::metadata::{PSP22Metadata, PSP22MetadataRef},
     };
+
+    const ONE_USDT: u128 = 1_000_000;
+    const ONE_USDC: u128 = 1_000_000;
+    const ONE_WETH: u128 = E18_U128;
+    const ONE_WBTC: u128 = E8_U128;
+    const ONE_AZERO: u128 = E12_U128;
 
     #[derive(Debug, scale::Encode, scale::Decode)]
     #[cfg_attr(
@@ -52,16 +60,6 @@ mod register_assets_proposal {
     const ONE_PERCENT_APR_E18: u64 = 3_170_979;
     const ONE_SEC: u64 = 1000;
     const ONE_MIN: u64 = ONE_SEC * (60);
-    const ONE_HOUR: u64 = ONE_MIN * (60);
-
-    const DEFAULT_INTEREST_RATE_MODEL: InterestRateModelParams = InterestRateModelParams {
-        target_ur_e6: 900_000, //90%
-        min_rate_at_target_e18: 2 * ONE_PERCENT_APR_E18,
-        max_rate_at_target_e18: 10 * ONE_PERCENT_APR_E18,
-
-        rate_at_max_ur_e18: 100 * ONE_PERCENT_APR_E18,
-        minimal_time_between_adjustments: ONE_HOUR,
-    };
 
     #[derive(Debug, scale::Encode, scale::Decode)]
     #[cfg_attr(
@@ -277,8 +275,8 @@ mod register_assets_proposal {
                 // address: hex_literal::hex!("5Et3dDcXUiThrBCot7g65k3oDSicGy4qC82cq9f911izKNtE"),
                 address: self.usdt_address,
                 fees: SetReserveFeesArgs {
-                    deposit_fee_e6: 0,
-                    debt_fee_e6: 0,
+                    deposit_fee_e6: 50_000,
+                    debt_fee_e6: 50_000,
                 },
                 interest_rate_model_params: InterestRateModelParams {
                     target_ur_e6: 920_000, //92%
@@ -293,10 +291,10 @@ mod register_assets_proposal {
                     penalty_e6: Some(20_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: Some(200_000 * 1_000_000), // 200_000 USDT
+                    maximal_total_deposit: Some(400_000 * ONE_USDT), // 400_000 USDT
                     maximal_total_debt: None,
-                    minimal_collateral: 2_000,
-                    minimal_debt: 1_000,
+                    minimal_collateral: 10 * ONE_USDT, // 10 USDT
+                    minimal_debt: 10 * ONE_USDT,       // 10 USDT
                 },
             }
         }
@@ -306,8 +304,8 @@ mod register_assets_proposal {
                 // address: hex_literal::hex!("5FYFojNCJVFR2bBNKfAePZCa72ZcVX5yeTv8K9bzeUo8D83Z"),
                 address: self.usdc_address,
                 fees: SetReserveFeesArgs {
-                    deposit_fee_e6: 0,
-                    debt_fee_e6: 0,
+                    deposit_fee_e6: 50_000,
+                    debt_fee_e6: 50_000,
                 },
                 interest_rate_model_params: InterestRateModelParams {
                     target_ur_e6: 920_000, //92%
@@ -322,10 +320,10 @@ mod register_assets_proposal {
                     penalty_e6: Some(20_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: None,
+                    maximal_total_deposit: Some(400_000 * ONE_USDC), // 400_000 USDC
                     maximal_total_debt: None,
-                    minimal_collateral: 2_000,
-                    minimal_debt: 1_000,
+                    minimal_collateral: 10 * ONE_USDC, // 10 USDC
+                    minimal_debt: 10 * ONE_USDC,       // 10 USDC
                 },
             }
         }
@@ -335,8 +333,8 @@ mod register_assets_proposal {
                 // address: hex_literal::hex!("5EoFQd36196Duo6fPTz2MWHXRzwTJcyETHyCyaB3rb61Xo2u"),
                 address: self.weth_address,
                 fees: SetReserveFeesArgs {
-                    deposit_fee_e6: 0,
-                    debt_fee_e6: 0,
+                    deposit_fee_e6: 50_000,
+                    debt_fee_e6: 50_000,
                 },
                 interest_rate_model_params: InterestRateModelParams {
                     target_ur_e6: 850_000, //85%
@@ -351,10 +349,10 @@ mod register_assets_proposal {
                     penalty_e6: Some(125_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: None,
+                    maximal_total_deposit: Some(40 * ONE_WETH), // 40 WETH ~ 100_000 USD
                     maximal_total_debt: None,
-                    minimal_collateral: 2_000,
-                    minimal_debt: 1_000,
+                    minimal_collateral: ONE_WETH / 250, // 0.004 WETH ~ 10 USD
+                    minimal_debt: ONE_WETH / 250,       // 0.004 WETH ~ 10 USD
                 },
             }
         }
@@ -364,8 +362,8 @@ mod register_assets_proposal {
                 // address: hex_literal::hex!("5EEtCdKLyyhQnNQWWWPM1fMDx1WdVuiaoR9cA6CWttgyxtuJ"),
                 address: self.wbtc_address,
                 fees: SetReserveFeesArgs {
-                    deposit_fee_e6: 0,
-                    debt_fee_e6: 0,
+                    deposit_fee_e6: 50_000,
+                    debt_fee_e6: 50_000,
                 },
                 interest_rate_model_params: InterestRateModelParams {
                     target_ur_e6: 850_000, //85%
@@ -380,10 +378,10 @@ mod register_assets_proposal {
                     penalty_e6: Some(100_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: None,
+                    maximal_total_deposit: Some(2 * ONE_WBTC), // 2 WBTC ~ 110 000 USD
                     maximal_total_debt: None,
-                    minimal_collateral: 2_000,
-                    minimal_debt: 1_000,
+                    minimal_collateral: ONE_WBTC / 5000, // 0.0002 WBTC ~ 10 USD
+                    minimal_debt: ONE_WBTC / 5000,       // 0.0002 WBTC ~ 10 USD
                 },
             }
         }
@@ -393,13 +391,13 @@ mod register_assets_proposal {
                 // address: hex_literal::hex!("5CtuFVgEUz13SFPVY6s2cZrnLDEkxQXc19aXrNARwEBeCXgg"),
                 address: self.wazero_address,
                 fees: SetReserveFeesArgs {
-                    deposit_fee_e6: 0,
-                    debt_fee_e6: 0,
+                    deposit_fee_e6: 50_000,
+                    debt_fee_e6: 50_000,
                 },
                 interest_rate_model_params: InterestRateModelParams {
-                    target_ur_e6: 450_000, //45%
-                    min_rate_at_target_e18: ONE_PERCENT_APR_E18,
-                    max_rate_at_target_e18: 10 * ONE_PERCENT_APR_E18,
+                    target_ur_e6: 700_000, //45%
+                    min_rate_at_target_e18: 4 * ONE_PERCENT_APR_E18,
+                    max_rate_at_target_e18: 16 * ONE_PERCENT_APR_E18,
                     rate_at_max_ur_e18: 230 * ONE_PERCENT_APR_E18,
                     minimal_time_between_adjustments: 30 * ONE_MIN,
                 },
@@ -409,10 +407,10 @@ mod register_assets_proposal {
                     penalty_e6: Some(500_000),
                 },
                 restrictions: ReserveRestrictions {
-                    maximal_total_deposit: None,
+                    maximal_total_deposit: Some(300_000 * ONE_AZERO), // 300 000 WAZERO ~ 120 000 USD
                     maximal_total_debt: None,
-                    minimal_collateral: 2_000,
-                    minimal_debt: 1_000,
+                    minimal_collateral: 25 * ONE_AZERO, // 25 WAZERO ~ 10 USD
+                    minimal_debt: 25 * ONE_AZERO,       // 25 WAZERO ~ 10 USD
                 },
             }
         }
